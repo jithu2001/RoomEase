@@ -1,0 +1,33 @@
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+public/assets/sql-wasm.wasm
+
+# Android build artefacts (the android/ project itself is committed)
+android/build/
+android/.gradle/
+android/app/build/
+android/app/src/main/assets/public/
+android/app/src/main/assets/capacitor.config.json
+android/app/src/main/assets/capacitor.plugins.json
+android/local.properties
+android/keystore.properties
+android/*.keystore
+android/capacitor-cordova-android-plugins/
+*.apk
+*.aab
+*.keystore
+!debug.keystore
+
+# Tooling
+.vscode/*
+!.vscode/extensions.json
+*.tsbuildinfo
+.DS_Store
+Thumbs.db
+
+# Never commit real hotel data or backups
+*.zip
+hotel-data/

@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Hotel Manager</string>
+    <string name="title_activity_main">Hotel Manager</string>
+    <string name="package_name">com.trinity.hotelmanager</string>
+    <string name="custom_url_scheme">com.trinity.hotelmanager</string>
+</resources>
