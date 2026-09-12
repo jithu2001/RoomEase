@@ -1,33 +1,48 @@
-# Dependencies
-node_modules/
-
-# Build output
-dist/
-public/assets/sql-wasm.wasm
-
-# Android build artefacts (the android/ project itself is committed)
-android/build/
-android/.gradle/
-android/app/build/
-android/app/src/main/assets/public/
-android/app/src/main/assets/capacitor.config.json
-android/app/src/main/assets/capacitor.plugins.json
-android/local.properties
-android/keystore.properties
-android/*.keystore
-android/capacitor-cordova-android-plugins/
-*.apk
-*.aab
-*.keystore
-!debug.keystore
-
-# Tooling
-.vscode/*
-!.vscode/extensions.json
-*.tsbuildinfo
+# Miscellaneous
+*.class
+*.log
+*.pyc
+*.swp
 .DS_Store
-Thumbs.db
+.atom/
+.build/
+.buildlog/
+.history
+.svn/
+.swiftpm/
+migrate_working_dir/
 
-# Never commit real hotel data or backups
-*.zip
-hotel-data/
+# IntelliJ related
+*.iml
+*.ipr
+*.iws
+.idea/
+
+# The .vscode folder contains launch configuration and tasks you configure in
+# VS Code which you may wish to be included in version control, so this line
+# is commented out by default.
+#.vscode/
+
+# Flutter/Dart/Pub related
+**/doc/api/
+**/ios/Flutter/.last_build_id
+.dart_tool/
+.flutter-plugins-dependencies
+.pub-cache/
+.pub/
+/build/
+/coverage/
+
+# Symbolication related
+app.*.symbols
+
+# Obfuscation related
+app.*.map.json
+
+# Android Studio will place build artifacts here
+/android/app/debug
+/android/app/profile
+/android/app/release
+
+# Widget Preview related
+.widget_preview/

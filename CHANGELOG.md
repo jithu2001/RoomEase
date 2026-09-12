@@ -1,5 +1,34 @@
 # Changelog
 
+## 2.0.0 — migrated to Flutter
+
+### Full rewrite: React + Capacitor → Flutter
+- The entire app has been rewritten in **Flutter/Dart**. No React, Node,
+  Vite, or Capacitor code remains in this repository — the native Android
+  project is now a plain Flutter `android/` project, and there is no browser
+  dev-mode fallback (no `jeep-sqlite`/`sql.js`, no `VITE_WEB_SQLITE`).
+- **Material Design 3** throughout: a `ColorScheme.fromSeed` derived from the
+  original brand blue, light + dark support, and a `StatusColors` theme
+  extension for the success/warning tones M3 doesn't define on its own.
+- The on-device **SQLite schema is unchanged** (same 5 migrations, same
+  tables/columns/indexes) and the **backup `.zip` format is unchanged**
+  (`manifest.json` + `data.json` + `images/…`), so an export made by the old
+  app restores cleanly in this one, and vice versa.
+- Business logic (check-in/edit/check-out, room-conflict prevention,
+  returning-guest reuse, companion guests, ID photo compression, PIN
+  hashing, backup/restore, automatic daily backup, guest reports) was ported
+  1:1 rather than redesigned — see `README.md`'s Architecture section for how
+  the layers map to the original `src/` structure.
+- The "print current WebView" PDF trick is gone: the guest report PDF is now
+  built directly from structured data with the `pdf` package and previewed
+  in-app, which is both simpler and more portable than the old
+  print-framework approach.
+- `ScreenGuard` (FLAG_SECURE while a PIN is set) is now a small custom Kotlin
+  platform channel in `MainActivity.kt`, replacing the old Capacitor plugin
+  of the same purpose.
+- 79 automated tests cover the data/service layer, run against real SQLite
+  via `sqflite_common_ffi` (no device/emulator required).
+
 ## 1.3.0 — printable guest report
 
 ### Guest report (PDF)
