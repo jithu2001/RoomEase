@@ -127,6 +127,31 @@ void main() {
     expect(stats.totalRooms, defaultRoomsCount);
   });
 
+  test('dashboard sums recorded amounts for bookings checked in this month', () async {
+    final now = DateTime.now();
+    await customers.checkIn(
+      _values(room: '101', amountMinor: 150000, checkIn: now),
+      CheckInImages(front: _fakeImage(), back: _fakeImage()),
+    );
+    await customers.checkIn(
+      _values(room: '102', amountMinor: 250000, checkIn: now),
+      CheckInImages(front: _fakeImage(), back: _fakeImage()),
+    );
+    // No amount recorded — should count toward monthBookings but not the total.
+    await customers.checkIn(_values(room: '103', checkIn: now), CheckInImages(front: _fakeImage(), back: _fakeImage()));
+    // A booking from a different month must not be included in this month's total.
+    final lastMonth = DateTime(now.year, now.month - 1, 15);
+    await customers.checkIn(
+      _values(room: '104', amountMinor: 999900, checkIn: lastMonth),
+      CheckInImages(front: _fakeImage(), back: _fakeImage()),
+    );
+
+    final stats = await customers.dashboard();
+    expect(stats.monthAmountMinor, 400000);
+    expect(stats.monthBookings, 3);
+    expect(stats.monthBookingsWithAmount, 2);
+  });
+
   test('findReturningGuests requires at least 3 characters', () async {
     await customers.checkIn(_values(), CheckInImages(front: _fakeImage(), back: _fakeImage()));
     expect(await customers.findReturningGuests('98'), isEmpty);

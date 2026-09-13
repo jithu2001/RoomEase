@@ -123,15 +123,23 @@ ThemeData _buildTheme(Brightness brightness) {
       filled: true,
       fillColor: colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
     ),
+    // A finite minimum width (not Size.fromHeight, which sets width to
+    // double.infinity): that minimum silently crashes any button placed as
+    // a plain — not Expanded/Flexible — child of a Row (Row hands
+    // non-flexible children unbounded width, so an infinite *minimum*
+    // width has nothing finite to clamp to). Buttons meant to be full-width
+    // get there because their parent (a stretching Column, or a ListView
+    // item at full width) already hands them a tight width constraint,
+    // which wins over this minimum regardless.
     filledButtonTheme: FilledButtonThemeData(
       style: FilledButton.styleFrom(
-        minimumSize: const Size.fromHeight(48),
+        minimumSize: const Size(64, 48),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       ),
     ),
     outlinedButtonTheme: OutlinedButtonThemeData(
       style: OutlinedButton.styleFrom(
-        minimumSize: const Size.fromHeight(48),
+        minimumSize: const Size(64, 48),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       ),
     ),

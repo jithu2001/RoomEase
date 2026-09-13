@@ -85,6 +85,7 @@ class _ReportsPageState extends State<ReportsPage> {
                     : _report!.bookings.isEmpty
                         ? const EmptyState(glyph: '📄', title: 'No guests on this date')
                         : PdfPreview(
+                            key: ValueKey(_report!.day),
                             build: (format) => buildReportPdf(_report!, appState.services.images),
                             allowPrinting: true,
                             allowSharing: true,

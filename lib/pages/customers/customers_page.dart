@@ -7,6 +7,7 @@ import 'package:provider/provider.dart';
 import '../../models/models.dart';
 import '../../state/app_state.dart';
 import '../../theme/app_theme.dart';
+import '../../theme/motion.dart';
 import '../../utils/app_date.dart';
 import '../../widgets/app_scaffold.dart';
 import '../../widgets/feedback.dart';
@@ -164,7 +165,7 @@ class _CustomersPageState extends State<CustomersPage> {
                                 if (index == _page!.items.length) {
                                   return _Footer(page: _page!, onLoadMore: _loadMore);
                                 }
-                                return _CustomerRow(customer: _page!.items[index]);
+                                return StaggeredEntrance(index: index, child: _CustomerRow(customer: _page!.items[index]));
                               },
                             ),
                           ),

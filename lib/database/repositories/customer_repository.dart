@@ -209,6 +209,34 @@ class CustomerRepository {
     return rows.first['c'] as int;
   }
 
+  /// Sum of `amount_minor` (paise) across bookings checked in during
+  /// [monthKey] ('YYYY-MM'). Null amounts (not recorded) don't count.
+  Future<int> sumAmountMinorForMonth(String monthKey) async {
+    final rows = await _driver.query(
+      "SELECT COALESCE(SUM(amount_minor), 0) AS s FROM customers WHERE substr(check_in_date, 1, 7) = ?",
+      [monthKey],
+    );
+    return rows.first['s'] as int;
+  }
+
+  Future<int> countCheckInsForMonth(String monthKey) async {
+    final rows = await _driver.query(
+      'SELECT COUNT(*) AS c FROM customers WHERE substr(check_in_date, 1, 7) = ?',
+      [monthKey],
+    );
+    return rows.first['c'] as int;
+  }
+
+  /// Of the bookings checked in during [monthKey], how many have an amount
+  /// recorded at all (amount is optional per booking).
+  Future<int> countAmountRecordedForMonth(String monthKey) async {
+    final rows = await _driver.query(
+      'SELECT COUNT(*) AS c FROM customers WHERE substr(check_in_date, 1, 7) = ? AND amount_minor IS NOT NULL',
+      [monthKey],
+    );
+    return rows.first['c'] as int;
+  }
+
   /// Everyone whose stay covers [dayKey] — inclusive of arrivals and
   /// departures on that same day, and anyone still staying.
   Future<List<Customer>> listStayingOn(String dayKey) async {

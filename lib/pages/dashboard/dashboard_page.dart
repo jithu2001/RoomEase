@@ -4,7 +4,9 @@ import 'package:provider/provider.dart';
 
 import '../../models/models.dart';
 import '../../state/app_state.dart';
+import '../../theme/motion.dart';
 import '../../utils/app_date.dart';
+import '../../utils/money.dart';
 import '../../widgets/app_scaffold.dart';
 import '../../widgets/feedback.dart';
 
@@ -95,6 +97,8 @@ class _DashboardPageState extends State<DashboardPage> {
                           ),
                         ),
                       ),
+                      const SizedBox(height: 12),
+                      _MonthCollectionCard(stats: _stats!),
                       if (daysSinceBackup == null || daysSinceBackup >= 7) ...[
                         const SizedBox(height: 12),
                         Notice(
@@ -129,14 +133,17 @@ class _DashboardPageState extends State<DashboardPage> {
                           action: FilledButton(onPressed: () => context.go('/check-in'), child: const Text('New Check-In')),
                         )
                       else
-                        ..._active.map((c) => Card(
-                              margin: const EdgeInsets.only(top: 8),
-                              child: ListTile(
-                                onTap: () => context.push('/customers/${c.id}'),
-                                leading: CircleAvatar(child: Text(c.roomNumber, style: const TextStyle(fontSize: 11))),
-                                title: Text(c.name),
-                                subtitle: Text('Since ${formatTime(c.checkInDate)} · ${c.numberOfPersons} person(s)'),
-                                trailing: const Icon(Icons.chevron_right),
+                        ..._active.asMap().entries.map((entry) => StaggeredEntrance(
+                              index: entry.key,
+                              child: Card(
+                                margin: const EdgeInsets.only(top: 8),
+                                child: ListTile(
+                                  onTap: () => context.push('/customers/${entry.value.id}'),
+                                  leading: CircleAvatar(child: Text(entry.value.roomNumber, style: const TextStyle(fontSize: 11))),
+                                  title: Text(entry.value.name),
+                                  subtitle: Text('Since ${formatTime(entry.value.checkInDate)} · ${entry.value.numberOfPersons} person(s)'),
+                                  trailing: const Icon(Icons.chevron_right),
+                                ),
                               ),
                             )),
                     ],
@@ -151,6 +158,52 @@ int? _daysSince(String iso) {
   final dt = parseStoredIso(iso);
   if (dt == null) return null;
   return DateTime.now().difference(dt).inDays;
+}
+
+const _monthNames = [
+  'January', 'February', 'March', 'April', 'May', 'June',
+  'July', 'August', 'September', 'October', 'November', 'December',
+];
+
+/// "This Month" revenue card: the total of whatever amounts were recorded
+/// for bookings checked in this calendar month. Amount is an optional field
+/// per booking, so the subtitle is explicit about how many bookings that
+/// total actually covers — a bare total could otherwise be misread as
+/// complete revenue when it's really "revenue where staff remembered to
+/// record it".
+class _MonthCollectionCard extends StatelessWidget {
+  final DashboardStats stats;
+  const _MonthCollectionCard({required this.stats});
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final now = DateTime.now();
+    final monthLabel = _monthNames[now.month - 1];
+    final subtitle = stats.monthBookings == 0
+        ? 'No bookings checked in yet this month'
+        : stats.monthBookingsWithAmount < stats.monthBookings
+            ? 'Recorded for ${stats.monthBookingsWithAmount} of ${stats.monthBookings} booking(s) this month'
+            : 'Across ${stats.monthBookings} booking(s) this month';
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('$monthLabel Collection', style: Theme.of(context).textTheme.titleSmall),
+            const SizedBox(height: 8),
+            Text(
+              formatMinor(stats.monthAmountMinor),
+              style: Theme.of(context).textTheme.headlineMedium?.copyWith(fontWeight: FontWeight.bold, color: scheme.primary),
+            ),
+            const SizedBox(height: 4),
+            Text(subtitle, style: TextStyle(color: scheme.onSurfaceVariant, fontSize: 13)),
+          ],
+        ),
+      ),
+    );
+  }
 }
 
 class _StatTile extends StatelessWidget {

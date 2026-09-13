@@ -8,6 +8,7 @@ import '../models/models.dart';
 import '../services/image_service.dart';
 import '../utils/image_compression.dart' as compression;
 import 'feedback.dart';
+import 'full_screen_image_viewer.dart';
 
 /// One side of an ID photo capture control (front/back) — mirrors
 /// `components/IdPhotoField.tsx`. Shows either a freshly-captured preview, an
@@ -66,6 +67,36 @@ class _IdPhotoFieldState extends State<IdPhotoField> {
     widget.onChanged(null);
   }
 
+  bool get _canZoom => !_busy && (_captured != null || _hasExisting);
+
+  void _openViewer() {
+    if (_captured != null) {
+      FullScreenImageViewer.show(
+        context,
+        label: widget.label,
+        child: Image.memory(Uint8List.fromList(_captured!.full)),
+      );
+      return;
+    }
+    if (_hasExisting) {
+      FullScreenImageViewer.show(
+        context,
+        label: widget.label,
+        child: FutureBuilder<String?>(
+          future: widget.images.resolvePath(widget.existingPath),
+          builder: (context, snapshot) {
+            if (!snapshot.hasData) return const CircularProgressIndicator(color: Colors.white);
+            final resolved = snapshot.data;
+            if (resolved == null) {
+              return const Text('This photo is no longer stored on this device.', style: TextStyle(color: Colors.white70));
+            }
+            return Image.file(File(resolved));
+          },
+        ),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
@@ -89,7 +120,28 @@ class _IdPhotoFieldState extends State<IdPhotoField> {
               border: Border.all(color: scheme.outlineVariant),
             ),
             clipBehavior: Clip.antiAlias,
-            child: _buildPreview(),
+            child: Material(
+              color: Colors.transparent,
+              child: InkWell(
+                onTap: _canZoom ? _openViewer : null,
+                child: Stack(
+                  fit: StackFit.expand,
+                  children: [
+                    _buildPreview(),
+                    if (_canZoom)
+                      Positioned(
+                        right: 6,
+                        bottom: 6,
+                        child: Container(
+                          padding: const EdgeInsets.all(4),
+                          decoration: const BoxDecoration(color: Colors.black45, shape: BoxShape.circle),
+                          child: const Icon(Icons.zoom_in, size: 18, color: Colors.white),
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+            ),
           ),
         ),
         const SizedBox(height: 4),
@@ -124,12 +176,13 @@ class _IdPhotoFieldState extends State<IdPhotoField> {
   }
 
   Widget _buildPreview() {
-    if (_busy) return const Center(child: CircularProgressIndicator());
+    if (_busy) return const Center(key: ValueKey('busy'), child: CircularProgressIndicator());
     if (_captured != null) {
-      return Image.memory(Uint8List.fromList(_captured!.full), fit: BoxFit.cover);
+      return Image.memory(Uint8List.fromList(_captured!.full), key: ValueKey(_captured), fit: BoxFit.cover);
     }
     if (_hasExisting) {
       return FutureBuilder<String?>(
+        key: const ValueKey('existing'),
         future: widget.images.previewPath(widget.existingThumbPath, widget.existingPath),
         builder: (context, snapshot) {
           if (!snapshot.hasData) return const Center(child: CircularProgressIndicator());
@@ -140,6 +193,7 @@ class _IdPhotoFieldState extends State<IdPhotoField> {
       );
     }
     return Center(
+      key: const ValueKey('empty'),
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Text(

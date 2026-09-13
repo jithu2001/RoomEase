@@ -84,10 +84,12 @@ class _PinLockPageState extends State<PinLockPage> {
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: List.generate(dotCount, (i) {
                   final filled = i < _pin.length;
-                  return Container(
+                  return AnimatedContainer(
+                    duration: const Duration(milliseconds: 180),
+                    curve: Curves.easeOut,
                     margin: const EdgeInsets.symmetric(horizontal: 6),
-                    width: 14,
-                    height: 14,
+                    width: filled ? 16 : 14,
+                    height: filled ? 16 : 14,
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
                       color: filled ? scheme.primary : Colors.transparent,

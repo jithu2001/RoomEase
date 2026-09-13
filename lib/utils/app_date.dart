@@ -39,6 +39,10 @@ String nowIso() => toIso(DateTime.now());
 /// `YYYY-MM-DD` for [dt] (local calendar day).
 String toDayKey(DateTime dt) => '${_pad4(dt.year)}-${_pad2(dt.month)}-${_pad2(dt.day)}';
 
+/// `YYYY-MM` for [dt] (local calendar month) — matches the first 7
+/// characters of a stored ISO string, for cheap "this month" filtering.
+String toMonthKey(DateTime dt) => '${_pad4(dt.year)}-${_pad2(dt.month)}';
+
 /// The local calendar day encoded at the front of a stored ISO string —
 /// a cheap string slice, not a timezone reinterpretation. Relies on every
 /// stored timestamp using the local-offset convention above.

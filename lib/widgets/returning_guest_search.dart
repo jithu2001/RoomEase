@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import '../models/models.dart';
 import '../services/customer_service.dart';
 import '../theme/app_theme.dart';
+import '../theme/motion.dart';
 import '../utils/app_date.dart';
 
 /// Search-by-phone/name box on the Check-In screen for reusing a previous
@@ -69,28 +70,50 @@ class _ReturningGuestSearchState extends State<ReturningGuestSearch> {
                 isDense: true,
               ),
             ),
-            if (_results != null) ...[
-              const SizedBox(height: 8),
-              if (_results!.isEmpty)
-                Text('No previous guest found. Fill in the details below as a new guest.',
-                    style: TextStyle(color: scheme.onSurfaceVariant))
-              else
-                ..._results!.map((match) => Card(
-                      margin: const EdgeInsets.only(top: 6),
-                      color: scheme.surfaceContainerHighest.withValues(alpha: 0.35),
-                      child: ListTile(
-                        title: Text(match.name),
-                        subtitle: Text('${match.phone} · ${match.stayCount} stay(s) · last ${formatDate(match.lastStay)}'),
-                        trailing: Chip(
-                          label: Text(match.hasIdPhotos ? 'ID on file' : 'No ID', style: const TextStyle(fontSize: 11)),
-                          backgroundColor: match.hasIdPhotos ? context.statusColors.successContainer : scheme.surfaceContainerHighest,
-                          labelStyle: TextStyle(color: match.hasIdPhotos ? context.statusColors.onSuccessContainer : scheme.onSurfaceVariant),
-                          visualDensity: VisualDensity.compact,
-                        ),
-                        onTap: () => widget.onSelect(match),
-                      ),
-                    )),
-            ],
+            AnimatedSize(
+              duration: AppMotion.duration,
+              curve: AppMotion.curve,
+              alignment: Alignment.topCenter,
+              child: _results == null
+                  ? const SizedBox(width: double.infinity)
+                  : Padding(
+                      padding: const EdgeInsets.only(top: 8),
+                      child: _results!.isEmpty
+                          ? Text('No previous guest found. Fill in the details below as a new guest.',
+                              style: TextStyle(color: scheme.onSurfaceVariant))
+                          : Column(
+                              children: _results!
+                                  .asMap()
+                                  .entries
+                                  .map((entry) => StaggeredEntrance(
+                                        index: entry.key,
+                                        child: Card(
+                                          margin: const EdgeInsets.only(top: 6),
+                                          color: scheme.surfaceContainerHighest.withValues(alpha: 0.35),
+                                          child: ListTile(
+                                            title: Text(entry.value.name),
+                                            subtitle: Text(
+                                                '${entry.value.phone} · ${entry.value.stayCount} stay(s) · last ${formatDate(entry.value.lastStay)}'),
+                                            trailing: Chip(
+                                              label: Text(entry.value.hasIdPhotos ? 'ID on file' : 'No ID',
+                                                  style: const TextStyle(fontSize: 11)),
+                                              backgroundColor: entry.value.hasIdPhotos
+                                                  ? context.statusColors.successContainer
+                                                  : scheme.surfaceContainerHighest,
+                                              labelStyle: TextStyle(
+                                                  color: entry.value.hasIdPhotos
+                                                      ? context.statusColors.onSuccessContainer
+                                                      : scheme.onSurfaceVariant),
+                                              visualDensity: VisualDensity.compact,
+                                            ),
+                                            onTap: () => widget.onSelect(entry.value),
+                                          ),
+                                        ),
+                                      ))
+                                  .toList(),
+                            ),
+                    ),
+            ),
           ],
         ),
       ),

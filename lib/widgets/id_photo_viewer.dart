@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 
 import '../services/image_service.dart';
+import 'full_screen_image_viewer.dart';
 
 /// Read-only ID photo viewer for a detail screen — a 2-column thumbnail
 /// grid that opens a full-screen viewer on tap. Mirrors
@@ -83,42 +84,19 @@ class _Thumb extends StatelessWidget {
   }
 
   void _openViewer(BuildContext context) {
-    Navigator.of(context).push(MaterialPageRoute(
-      builder: (context) => _FullScreenViewer(images: images, label: label, path: path),
-      fullscreenDialog: true,
-    ));
-  }
-}
-
-class _FullScreenViewer extends StatelessWidget {
-  final ImageService images;
-  final String label;
-  final String? path;
-  const _FullScreenViewer({required this.images, required this.label, required this.path});
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.black,
-      appBar: AppBar(
-        backgroundColor: Colors.black,
-        foregroundColor: Colors.white,
-        title: Text(label),
-      ),
-      body: Center(
-        child: InteractiveViewer(
-          child: FutureBuilder<String?>(
-            future: images.resolvePath(path),
-            builder: (context, snapshot) {
-              if (!snapshot.hasData) return const CircularProgressIndicator(color: Colors.white);
-              final resolved = snapshot.data;
-              if (resolved == null) {
-                return const Text('This photo is no longer stored on this device.', style: TextStyle(color: Colors.white70));
-              }
-              return Image.file(File(resolved));
-            },
-          ),
-        ),
+    FullScreenImageViewer.show(
+      context,
+      label: label,
+      child: FutureBuilder<String?>(
+        future: images.resolvePath(path),
+        builder: (context, snapshot) {
+          if (!snapshot.hasData) return const CircularProgressIndicator(color: Colors.white);
+          final resolved = snapshot.data;
+          if (resolved == null) {
+            return const Text('This photo is no longer stored on this device.', style: TextStyle(color: Colors.white70));
+          }
+          return Image.file(File(resolved));
+        },
       ),
     );
   }

@@ -60,7 +60,10 @@ class AppScaffold extends StatelessWidget {
       body: SafeArea(top: false, child: body),
       floatingActionButton: floatingAction ??
           FloatingActionButton(
-            heroTag: 'check-in-fab',
+            // Disabled: the FAB is present on nearly every screen with the
+            // same tag, so Hero would fly it between routes on top of the
+            // page transition, fighting it rather than complementing it.
+            heroTag: null,
             tooltip: 'New Check-In',
             onPressed: tab == AppTab.checkIn ? null : () => context.go('/check-in'),
             child: const Icon(Icons.add),

@@ -38,7 +38,10 @@ class _EditCustomerPageState extends State<EditCustomerPage> {
         builder: (context, snapshot) {
           if (snapshot.connectionState != ConnectionState.done) return const InlineLoading();
           if (snapshot.hasError) {
-            return ErrorState(message: snapshot.error.toString(), onRetry: () => setState(() => _future = appState.services.customers.get(widget.customerId)));
+            return ErrorState(
+              message: snapshot.error.toString(),
+              onRetry: () => setState(() => _future = appState.services.customers.get(widget.customerId)),
+            );
           }
           final customer = snapshot.data!;
           return CustomerForm(

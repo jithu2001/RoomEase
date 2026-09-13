@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 
 import '../../models/models.dart';
 import '../../state/app_state.dart';
+import '../../theme/motion.dart';
 import '../../utils/validation.dart';
 import '../../widgets/app_scaffold.dart';
 import '../../widgets/feedback.dart';
@@ -118,6 +119,7 @@ class _RoomsPageState extends State<RoomsPage> {
                                     controller: _controller,
                                     maxLength: 10,
                                     decoration: InputDecoration(labelText: 'Room number', errorText: _fieldError, counterText: ''),
+                                    onChanged: (_) => setState(() {}), // re-evaluates the Add button's disabled state
                                     onSubmitted: (_) => _addRoom(),
                                   ),
                                 ),
@@ -137,23 +139,29 @@ class _RoomsPageState extends State<RoomsPage> {
                     else ...[
                       const SizedBox(height: 20),
                       Text('Available (${available.length})', style: Theme.of(context).textTheme.titleSmall),
-                      ...available.map((room) => Card(
-                            margin: const EdgeInsets.only(top: 8),
-                            child: ListTile(
-                              title: Text('Room ${room.roomNumber}'),
-                              subtitle: const Text('Free — ready for a new check-in'),
-                              trailing: TextButton(onPressed: () => _removeRoom(room.roomNumber), child: const Text('Remove')),
+                      ...available.asMap().entries.map((entry) => StaggeredEntrance(
+                            index: entry.key,
+                            child: Card(
+                              margin: const EdgeInsets.only(top: 8),
+                              child: ListTile(
+                                title: Text('Room ${entry.value.roomNumber}'),
+                                subtitle: const Text('Free — ready for a new check-in'),
+                                trailing: TextButton(onPressed: () => _removeRoom(entry.value.roomNumber), child: const Text('Remove')),
+                              ),
                             ),
                           )),
                       const SizedBox(height: 20),
                       Text('Occupied (${occupied.length})', style: Theme.of(context).textTheme.titleSmall),
-                      ...occupied.map((room) => Card(
-                            margin: const EdgeInsets.only(top: 8),
-                            child: ListTile(
-                              onTap: () => context.push('/customers?q=${room.roomNumber}'),
-                              title: Text(room.customerName ?? ''),
-                              subtitle: Text('Room ${room.roomNumber} · ${room.customerCode ?? ''}'),
-                              trailing: const Chip(label: Text('In', style: TextStyle(fontSize: 11)), visualDensity: VisualDensity.compact),
+                      ...occupied.asMap().entries.map((entry) => StaggeredEntrance(
+                            index: entry.key,
+                            child: Card(
+                              margin: const EdgeInsets.only(top: 8),
+                              child: ListTile(
+                                onTap: () => context.push('/customers?q=${entry.value.roomNumber}'),
+                                title: Text(entry.value.customerName ?? ''),
+                                subtitle: Text('Room ${entry.value.roomNumber} · ${entry.value.customerCode ?? ''}'),
+                                trailing: const Chip(label: Text('In', style: TextStyle(fontSize: 11)), visualDensity: VisualDensity.compact),
+                              ),
                             ),
                           )),
                     ],

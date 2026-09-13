@@ -286,6 +286,15 @@ class DashboardStats {
   final int totalRooms;
   final int todaysCheckIns;
   final int todaysCheckOuts;
+  /// Sum of `amountMinor` (paise) across bookings checked in this calendar
+  /// month. Amount is an optional field per booking, so this is a total of
+  /// whatever was actually recorded, not necessarily every stay.
+  final int monthAmountMinor;
+  /// How many bookings checked in this month had an amount recorded, out of
+  /// [monthBookings] total — shown so the total above doesn't read as more
+  /// complete than it is.
+  final int monthBookingsWithAmount;
+  final int monthBookings;
 
   const DashboardStats({
     required this.currentlyStaying,
@@ -295,6 +304,9 @@ class DashboardStats {
     required this.totalRooms,
     required this.todaysCheckIns,
     required this.todaysCheckOuts,
+    required this.monthAmountMinor,
+    required this.monthBookingsWithAmount,
+    required this.monthBookings,
   });
 }
 

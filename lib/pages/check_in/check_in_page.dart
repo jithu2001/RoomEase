@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 import '../../models/models.dart';
 import '../../services/customer_service.dart';
 import '../../state/app_state.dart';
+import '../../theme/motion.dart';
 import '../../widgets/app_scaffold.dart';
 import '../../widgets/feedback.dart';
 import '../../widgets/returning_guest_search.dart';
@@ -58,11 +59,23 @@ class _CheckInPageState extends State<CheckInPage> {
       subtitle: _nextCode,
       body: Column(
         children: [
-          if (_reuseFrom == null)
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
-              child: ReturningGuestSearch(customers: appState.services.customers, onSelect: _onGuestSelected),
+          // Collapses smoothly (rather than popping) once a returning guest
+          // is picked, since the search no longer applies to this check-in.
+          AnimatedSize(
+            duration: AppMotion.duration,
+            curve: AppMotion.curve,
+            alignment: Alignment.topCenter,
+            child: AnimatedSwitcher(
+              duration: AppMotion.duration,
+              child: _reuseFrom == null
+                  ? Padding(
+                      key: const ValueKey('search'),
+                      padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+                      child: ReturningGuestSearch(customers: appState.services.customers, onSelect: _onGuestSelected),
+                    )
+                  : const SizedBox(key: ValueKey('no-search'), width: double.infinity),
             ),
+          ),
           Expanded(
             child: CustomerForm(
               services: appState.services,

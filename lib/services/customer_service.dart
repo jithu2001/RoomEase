@@ -54,7 +54,9 @@ class CustomerService {
   Future<List<Customer>> listActive() => _customers.listActive();
 
   Future<DashboardStats> dashboard({DateTime? now}) async {
-    final today = toDayKey(now ?? DateTime.now());
+    final clock = now ?? DateTime.now();
+    final today = toDayKey(clock);
+    final thisMonth = toMonthKey(clock);
     final results = await Future.wait([
       _rooms.count(),
       _customers.occupancyMap(),
@@ -63,6 +65,9 @@ class CustomerService {
       _customers.sumActivePersons(),
       _customers.countCheckInsOn(today),
       _customers.countCheckOutsOn(today),
+      _customers.sumAmountMinorForMonth(thisMonth),
+      _customers.countCheckInsForMonth(thisMonth),
+      _customers.countAmountRecordedForMonth(thisMonth),
     ]);
     final totalRooms = results[0] as int;
     final occupancy = results[1] as Map<String, ({String customerCode, String name})>;
@@ -71,6 +76,9 @@ class CustomerService {
     final activePersons = results[4] as int;
     final checkIns = results[5] as int;
     final checkOuts = results[6] as int;
+    final monthAmount = results[7] as int;
+    final monthBookings = results[8] as int;
+    final monthBookingsWithAmount = results[9] as int;
     final occupiedRooms = rooms.where((r) => occupancy.containsKey(r.roomNumber)).length;
     final availableRooms = totalRooms - occupiedRooms;
     return DashboardStats(
@@ -81,6 +89,9 @@ class CustomerService {
       totalRooms: totalRooms,
       todaysCheckIns: checkIns,
       todaysCheckOuts: checkOuts,
+      monthAmountMinor: monthAmount,
+      monthBookings: monthBookings,
+      monthBookingsWithAmount: monthBookingsWithAmount,
     );
   }
 
