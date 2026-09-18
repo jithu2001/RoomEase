@@ -66,5 +66,15 @@
             <action android:name="android.intent.action.PROCESS_TEXT"/>
             <data android:mimeType="text/plain"/>
         </intent>
+
+        <!-- Handing a wa.me welcome message to WhatsApp. Android 11+ hides
+             other packages unless they're declared here, which would make
+             launchUrl() fail silently. The app itself makes no network calls. -->
+        <intent>
+            <action android:name="android.intent.action.VIEW"/>
+            <data android:scheme="https"/>
+        </intent>
+        <package android:name="com.whatsapp"/>
+        <package android:name="com.whatsapp.w4b"/>
     </queries>
 </manifest>

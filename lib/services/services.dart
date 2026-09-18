@@ -13,6 +13,7 @@ import 'image_service.dart';
 import 'report_service.dart';
 import 'room_service.dart';
 import 'settings_service.dart';
+import 'whatsapp_service.dart';
 
 /// Composition root: builds every repository and service once, wired the
 /// same way as the original app's `container.ts`.
@@ -27,6 +28,7 @@ class Services {
   final SettingsService settings;
   final BackupService backup;
   final AutoBackupService autoBackup;
+  final WhatsAppService whatsapp;
 
   const Services({
     required this.db,
@@ -39,6 +41,7 @@ class Services {
     required this.settings,
     required this.backup,
     required this.autoBackup,
+    required this.whatsapp,
   });
 }
 
@@ -56,6 +59,7 @@ Services createServices(SqlDriver db, FileStore files) {
   final reports = ReportService(customerRepo, guestRepo, settings);
   final backup = BackupService(db, customerRepo, guestRepo, roomRepo, settingsRepo, files);
   final autoBackup = AutoBackupService(backup, settingsRepo, files, customerRepo);
+  final whatsapp = WhatsAppService(settings);
 
   return Services(
     db: db,
@@ -68,6 +72,7 @@ Services createServices(SqlDriver db, FileStore files) {
     settings: settings,
     backup: backup,
     autoBackup: autoBackup,
+    whatsapp: whatsapp,
   );
 }
 

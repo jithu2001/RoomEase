@@ -11,6 +11,7 @@ import '../../widgets/app_scaffold.dart';
 import '../../widgets/feedback.dart';
 import 'backup_settings.dart';
 import 'pin_settings.dart';
+import 'whatsapp_settings.dart';
 
 class SettingsPage extends StatefulWidget {
   const SettingsPage({super.key});
@@ -145,6 +146,8 @@ class _SettingsPageState extends State<SettingsPage> {
               trailing: const Icon(Icons.chevron_right),
             ),
           ),
+          const SizedBox(height: 12),
+          const WhatsAppSettings(),
           const SizedBox(height: 12),
           const PinSettings(),
           const SizedBox(height: 12),

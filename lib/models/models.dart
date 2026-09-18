@@ -227,6 +227,12 @@ class HotelSettings {
   final String pinHash;
   /// ISO timestamp of the last successful backup export, or ''.
   final String lastBackupAt;
+  /// Whether check-in offers to send a WhatsApp welcome message.
+  final bool whatsappEnabled;
+  /// Digits-only country code prepended to guest numbers that lack one.
+  final String whatsappCountryCode;
+  /// Welcome message body, with `{guest}`-style placeholders.
+  final String whatsappWelcomeTemplate;
 
   const HotelSettings({
     required this.hotelName,
@@ -234,6 +240,9 @@ class HotelSettings {
     required this.hotelPhone,
     required this.pinHash,
     required this.lastBackupAt,
+    required this.whatsappEnabled,
+    required this.whatsappCountryCode,
+    required this.whatsappWelcomeTemplate,
   });
 
   bool get pinEnabled => pinHash.isNotEmpty;

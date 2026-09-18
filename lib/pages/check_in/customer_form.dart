@@ -67,6 +67,26 @@ class _CustomerFormState extends State<CustomerForm> {
     _loadRooms();
   }
 
+  @override
+  void didUpdateWidget(CustomerForm oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // The controllers above are built once, on the form's first frame — when
+    // no returning guest has been picked yet. Picking one later only swaps in
+    // a new widget, so the reused details have to be pushed into the fields
+    // here or they'd never appear.
+    final reuse = widget.reuseFrom;
+    if (reuse == null || reuse.id == oldWidget.reuseFrom?.id) return;
+    _nameController.text = reuse.name;
+    _addressController.text = reuse.address;
+    _phoneController.text = reuse.phone;
+    // A rebuild is already in flight, so mutate directly rather than
+    // setState: clearing stale errors for the fields we just refilled.
+    _errors = Map.of(_errors)
+      ..remove(CustomerField.name)
+      ..remove(CustomerField.address)
+      ..remove(CustomerField.phone);
+  }
+
   Future<void> _loadRooms() async {
     final rooms = await widget.services.rooms.listAvailable(keepRoom: widget.existing?.roomNumber);
     if (mounted) setState(() => _rooms = rooms);

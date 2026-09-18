@@ -5,6 +5,7 @@ import 'package:crypto/crypto.dart';
 import '../database/repositories/settings_repository.dart';
 import '../models/models.dart';
 import '../utils/app_error.dart';
+import '../utils/message_template.dart';
 import '../utils/validation.dart';
 
 const _pinSalt = 'hotel-customer-manager/pin/v1:';
@@ -15,7 +16,16 @@ const _defaults = HotelSettings(
   hotelPhone: '',
   pinHash: '',
   lastBackupAt: '',
+  whatsappEnabled: true,
+  whatsappCountryCode: '91',
+  whatsappWelcomeTemplate: defaultWelcomeTemplate,
 );
+
+/// Longest welcome message we'll store. `wa.me` prefill is a URL query
+/// parameter, so a runaway template would get truncated by the OS anyway.
+const _maxTemplateLength = 1000;
+
+final _countryCodePattern = RegExp(r'^\d{1,4}$');
 
 String _hashPin(String pin) => sha256.convert(utf8.encode('$_pinSalt$pin')).toString();
 
@@ -36,6 +46,15 @@ class SettingsService {
       hotelPhone: stored['hotel_phone'] ?? _defaults.hotelPhone,
       pinHash: stored['pin_hash'] ?? _defaults.pinHash,
       lastBackupAt: stored['last_backup_at'] ?? _defaults.lastBackupAt,
+      // These three keys are absent on installs created before the WhatsApp
+      // feature shipped, so they fall back rather than needing a migration.
+      whatsappEnabled: (stored['whatsapp_enabled'] ?? '1') == '1',
+      whatsappCountryCode: (stored['whatsapp_country_code']?.isNotEmpty ?? false)
+          ? stored['whatsapp_country_code']!
+          : _defaults.whatsappCountryCode,
+      whatsappWelcomeTemplate: (stored['whatsapp_welcome_template']?.isNotEmpty ?? false)
+          ? stored['whatsapp_welcome_template']!
+          : _defaults.whatsappWelcomeTemplate,
     );
   }
 
@@ -52,6 +71,29 @@ class SettingsService {
       'hotel_name': name,
       'hotel_address': hotelAddress.trim(),
       'hotel_phone': hotelPhone.trim(),
+    });
+  }
+
+  Future<void> saveWhatsAppSettings({
+    required bool enabled,
+    required String countryCode,
+    required String template,
+  }) async {
+    final code = countryCode.trim().replaceFirst(RegExp(r'^\+'), '');
+    if (!_countryCodePattern.hasMatch(code)) {
+      throw const AppError(AppErrorCode.validation, 'Country code must be 1-4 digits.');
+    }
+    final body = template.trim();
+    if (body.isEmpty || body.length > _maxTemplateLength) {
+      throw const AppError(
+        AppErrorCode.validation,
+        'Welcome message is required (up to $_maxTemplateLength characters).',
+      );
+    }
+    await _repo.setMany({
+      'whatsapp_enabled': enabled ? '1' : '0',
+      'whatsapp_country_code': code,
+      'whatsapp_welcome_template': body,
     });
   }
 

@@ -2,6 +2,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:roomease/database/repositories/settings_repository.dart';
 import 'package:roomease/services/settings_service.dart';
 import 'package:roomease/utils/app_error.dart';
+import 'package:roomease/utils/message_template.dart';
 
 import '../helpers/test_db.dart';
 
@@ -53,5 +54,45 @@ void main() {
       () => settings.saveHotelInfo(hotelName: '', hotelAddress: '', hotelPhone: ''),
       throwsA(isA<AppError>()),
     );
+  });
+
+  group('WhatsApp settings', () {
+    test('falls back to defaults when the keys are absent (upgrade path)', () async {
+      final driver = await openTestDatabase();
+      final repo = SettingsRepository(driver);
+      for (final key in ['whatsapp_enabled', 'whatsapp_country_code', 'whatsapp_welcome_template']) {
+        await repo.remove(key);
+      }
+      final hotel = await SettingsService(repo).get();
+      expect(hotel.whatsappEnabled, isTrue);
+      expect(hotel.whatsappCountryCode, '91');
+      expect(hotel.whatsappWelcomeTemplate, defaultWelcomeTemplate);
+    });
+
+    test('round-trips a saved template', () async {
+      await settings.saveWhatsAppSettings(
+        enabled: false,
+        countryCode: '+1',
+        template: 'Welcome {guest} to room {room}.',
+      );
+      final hotel = await settings.get();
+      expect(hotel.whatsappEnabled, isFalse);
+      expect(hotel.whatsappCountryCode, '1'); // the '+' is stripped
+      expect(hotel.whatsappWelcomeTemplate, 'Welcome {guest} to room {room}.');
+    });
+
+    test('rejects a blank template', () async {
+      expect(
+        () => settings.saveWhatsAppSettings(enabled: true, countryCode: '91', template: '   '),
+        throwsA(isA<AppError>()),
+      );
+    });
+
+    test('rejects a non-numeric country code', () async {
+      expect(
+        () => settings.saveWhatsAppSettings(enabled: true, countryCode: 'IN', template: 'Hi'),
+        throwsA(isA<AppError>()),
+      );
+    });
   });
 }

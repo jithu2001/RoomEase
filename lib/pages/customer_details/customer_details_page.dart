@@ -8,10 +8,12 @@ import '../../state/app_state.dart';
 import '../../theme/app_theme.dart';
 import '../../utils/app_date.dart';
 import '../../utils/money.dart';
+import '../../utils/phone.dart';
 import '../../widgets/app_scaffold.dart';
 import '../../widgets/feedback.dart';
 import '../../widgets/guests_section.dart';
 import '../../widgets/id_photo_viewer.dart';
+import '../../widgets/whatsapp_welcome_sheet.dart';
 
 class CustomerDetailsPage extends StatefulWidget {
   final int customerId;
@@ -205,6 +207,9 @@ class _DetailsCard extends StatelessWidget {
     final scheme = Theme.of(context).colorScheme;
     final status = context.statusColors;
     final checkedIn = customer.status == CustomerStatus.checkedIn;
+    final appState = context.watch<AppState>();
+    final canWhatsApp = appState.hotel.whatsappEnabled &&
+        whatsappNumber(customer.phone, defaultCountryCode: appState.hotel.whatsappCountryCode) != null;
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(16),
@@ -227,7 +232,24 @@ class _DetailsCard extends StatelessWidget {
             _Row('Customer Code', customer.customerCode, mono: true),
             _Row('Name', customer.name),
             _Row('Address', customer.address),
-            _RowTappable('Phone', customer.phone, onTap: () => launchUrl(Uri.parse('tel:${customer.phone}'))),
+            _RowTappable(
+              'Phone',
+              customer.phone,
+              onTap: () => launchUrl(Uri.parse('tel:${customer.phone}')),
+              trailing: canWhatsApp
+                  ? IconButton(
+                      icon: const Icon(Icons.chat_bubble_outline),
+                      tooltip: 'Send WhatsApp welcome',
+                      visualDensity: VisualDensity.compact,
+                      onPressed: () => offerWhatsAppWelcome(
+                        context,
+                        service: appState.services.whatsapp,
+                        customer: customer,
+                        enabled: true,
+                      ),
+                    )
+                  : null,
+            ),
             _Row('Number of Persons', customer.numberOfPersons.toString()),
             _Row('Amount', formatMinor(customer.amountMinor)),
             _Row('Checked In', formatDateTime(customer.checkInDate)),
@@ -265,7 +287,8 @@ class _RowTappable extends StatelessWidget {
   final String label;
   final String value;
   final VoidCallback onTap;
-  const _RowTappable(this.label, this.value, {required this.onTap});
+  final Widget? trailing;
+  const _RowTappable(this.label, this.value, {required this.onTap, this.trailing});
 
   @override
   Widget build(BuildContext context) {
@@ -281,6 +304,7 @@ class _RowTappable extends StatelessWidget {
               child: Text(value, style: TextStyle(color: Theme.of(context).colorScheme.primary, decoration: TextDecoration.underline)),
             ),
           ),
+          ?trailing,
         ],
       ),
     );

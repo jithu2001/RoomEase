@@ -9,6 +9,7 @@ import '../../theme/motion.dart';
 import '../../widgets/app_scaffold.dart';
 import '../../widgets/feedback.dart';
 import '../../widgets/returning_guest_search.dart';
+import '../../widgets/whatsapp_welcome_sheet.dart';
 import 'customer_form.dart';
 
 class CheckInPage extends StatefulWidget {
@@ -92,6 +93,16 @@ class _CheckInPageState extends State<CheckInPage> {
                 if (!mounted) return;
                 // ignore: use_build_context_synchronously
                 context.showSuccessToast('${customer.name} checked in to room ${customer.roomNumber}');
+                // The stay is already saved — offering the welcome message is
+                // a bonus step, so nothing here can undo the check-in.
+                await offerWhatsAppWelcome(
+                  // ignore: use_build_context_synchronously
+                  context,
+                  service: appState.services.whatsapp,
+                  customer: customer,
+                  enabled: appState.hotel.whatsappEnabled,
+                );
+                if (!mounted) return;
                 // ignore: use_build_context_synchronously
                 context.go('/customers/${customer.id}');
               },

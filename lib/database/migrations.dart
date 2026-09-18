@@ -1,5 +1,6 @@
 import '../utils/app_date.dart';
 import '../utils/app_error.dart';
+import '../utils/message_template.dart';
 import 'sql_driver.dart';
 
 /// Schema version is tracked via `PRAGMA user_version` (no separate
@@ -23,6 +24,9 @@ Map<String, String> defaultSettings() => const {
       'pin_hash': '',
       'last_backup_at': '',
       'auto_backup_enabled': '1',
+      'whatsapp_enabled': '1',
+      'whatsapp_country_code': '91',
+      'whatsapp_welcome_template': defaultWelcomeTemplate,
     };
 
 final List<Migration> migrations = [
