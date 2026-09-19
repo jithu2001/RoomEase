@@ -1,6 +1,4 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- Keep in sync with the brand custom property in src/index.css. -->
-    <color name="brand">#0F4C81</color>
-    <color name="brand_dark">#0B3A63</color>
+    <color name="ic_launcher_background">#0F4C81</color>
 </resources>

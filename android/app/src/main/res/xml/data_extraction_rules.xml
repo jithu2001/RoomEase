@@ -1,22 +1,14 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
-    Customer records and ID document photos must never leave the device, so
-    both cloud backup and device-to-device transfer are excluded. This pairs
-    with android:allowBackup="false" for older Android versions.
+  Excludes all app data (the SQLite database and every ID photo under app-private
+  storage) from Android's cloud backup and device-to-device transfer. Guest data
+  never leaves this device except through an explicit, PIN-less local .zip export.
 -->
 <data-extraction-rules>
-    <cloud-backup>
+    <cloud-backup disableIfNoEncryptionCapability="false">
         <exclude domain="root" />
-        <exclude domain="database" />
-        <exclude domain="sharedpref" />
-        <exclude domain="file" />
-        <exclude domain="external" />
     </cloud-backup>
     <device-transfer>
         <exclude domain="root" />
-        <exclude domain="database" />
-        <exclude domain="sharedpref" />
-        <exclude domain="file" />
-        <exclude domain="external" />
     </device-transfer>
 </data-extraction-rules>
