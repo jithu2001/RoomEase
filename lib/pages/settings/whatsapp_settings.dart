@@ -80,8 +80,6 @@ class _WhatsAppSettingsState extends State<WhatsAppSettings> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Text('WhatsApp Welcome', style: theme.textTheme.titleSmall),
-            const SizedBox(height: 4),
             Text(
               'After a check-in, RoomEase can open WhatsApp with this message ready to send. '
               'Nothing is sent automatically — staff tap send in WhatsApp.',

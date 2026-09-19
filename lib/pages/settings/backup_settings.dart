@@ -193,8 +193,6 @@ class _BackupSettingsState extends State<BackupSettings> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Text('Data', style: Theme.of(context).textTheme.titleSmall),
-            const SizedBox(height: 8),
             const Notice(
               kind: NoticeKind.warn,
               message: 'Your customer data is stored only on this device. Regularly export a backup and keep a copy elsewhere.',

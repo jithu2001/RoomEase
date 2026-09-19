@@ -4,15 +4,12 @@ import 'package:package_info_plus/package_info_plus.dart';
 import 'package:provider/provider.dart';
 
 import '../../database/migrations.dart';
-import '../../database/app_database.dart';
-import '../../services/file_store.dart' show customersRoot;
 import '../../state/app_state.dart';
+import '../../utils/app_date.dart';
 import '../../widgets/app_scaffold.dart';
-import '../../widgets/feedback.dart';
-import 'backup_settings.dart';
-import 'pin_settings.dart';
-import 'whatsapp_settings.dart';
 
+/// Settings index. Each section lives on its own page so this screen stays a
+/// short, scannable list rather than one long stack of dense cards.
 class SettingsPage extends StatefulWidget {
   const SettingsPage({super.key});
 
@@ -21,13 +18,7 @@ class SettingsPage extends StatefulWidget {
 }
 
 class _SettingsPageState extends State<SettingsPage> {
-  late final _nameController = TextEditingController();
-  late final _addressController = TextEditingController();
-  late final _phoneController = TextEditingController();
-  bool _saving = false;
-  bool _initialised = false;
   int? _roomCount;
-  int? _customerCount;
   String _appVersion = '';
 
   @override
@@ -42,159 +33,175 @@ class _SettingsPageState extends State<SettingsPage> {
   Future<void> _loadCounts() async {
     final appState = context.read<AppState>();
     final rooms = await appState.services.rooms.list();
-    final customers = await appState.services.customers.search();
-    if (mounted) {
-      setState(() {
-        _roomCount = rooms.length;
-        _customerCount = customers.total;
-      });
-    }
-  }
-
-  void _syncControllers(AppState appState) {
-    if (_initialised) return;
-    _initialised = true;
-    _nameController.text = appState.hotel.hotelName;
-    _addressController.text = appState.hotel.hotelAddress;
-    _phoneController.text = appState.hotel.hotelPhone;
-  }
-
-  @override
-  void dispose() {
-    _nameController.dispose();
-    _addressController.dispose();
-    _phoneController.dispose();
-    super.dispose();
-  }
-
-  Future<void> _saveHotelInfo() async {
-    setState(() => _saving = true);
-    final appState = context.read<AppState>();
-    try {
-      await appState.services.settings.saveHotelInfo(
-        hotelName: _nameController.text,
-        hotelAddress: _addressController.text,
-        hotelPhone: _phoneController.text,
-      );
-      await appState.reloadHotel();
-      if (mounted) context.showSuccessToast('Hotel information saved');
-    } catch (e) {
-      if (mounted) context.showErrorToast(e);
-    } finally {
-      if (mounted) setState(() => _saving = false);
-    }
-  }
-
-  Future<void> _clearAllData() async {
-    final confirmed = await showConfirmDialog(
-      context,
-      title: 'Clear All Data',
-      message: 'This permanently deletes every customer record, every ID photo and the room list from this '
-          'device. Your hotel name and app PIN are kept. There is no cloud copy — export a backup first if '
-          'you want to keep this data.',
-      confirmLabel: 'Clear All Data',
-      danger: true,
-      requirePhrase: 'DELETE',
-    );
-    if (!confirmed || !mounted) return;
-    final appState = context.read<AppState>();
-    try {
-      await wipeAllTables(appState.services.db);
-      await appState.services.files.removeDir(customersRoot);
-      appState.invalidateData();
-      await appState.reloadHotel();
-      await _loadCounts();
-      if (mounted) context.showSuccessToast('All customer data cleared');
-    } catch (e) {
-      if (mounted) context.showErrorToast(e);
-    }
+    if (mounted) setState(() => _roomCount = rooms.length);
   }
 
   @override
   Widget build(BuildContext context) {
     final appState = context.watch<AppState>();
-    _syncControllers(appState);
+    final hotel = appState.hotel;
+    final theme = Theme.of(context);
+
     return AppScaffold(
       tab: AppTab.settings,
       title: 'Settings',
       body: ListView(
-        padding: const EdgeInsets.fromLTRB(16, 16, 16, 96),
+        padding: const EdgeInsets.fromLTRB(16, 8, 16, 96),
         children: [
-          Card(
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  Text('Hotel Information', style: Theme.of(context).textTheme.titleSmall),
-                  const SizedBox(height: 12),
-                  TextField(controller: _nameController, maxLength: 80, decoration: const InputDecoration(labelText: 'Hotel name')),
-                  TextField(controller: _addressController, maxLines: 3, maxLength: 250, decoration: const InputDecoration(labelText: 'Address')),
-                  TextField(controller: _phoneController, keyboardType: TextInputType.phone, maxLength: 20, decoration: const InputDecoration(labelText: 'Phone')),
-                  const SizedBox(height: 8),
-                  FilledButton(onPressed: _saving ? null : _saveHotelInfo, child: const Text('Save Hotel Information')),
-                ],
+          _SectionLabel('Hotel'),
+          _SettingsGroup(
+            children: [
+              _SettingsTile(
+                icon: Icons.storefront_outlined,
+                title: 'Hotel information',
+                subtitle: hotel.hotelName,
+                onTap: () => context.push('/settings/hotel'),
               ),
-            ),
-          ),
-          const SizedBox(height: 12),
-          Card(
-            child: ListTile(
-              onTap: () => context.push('/rooms'),
-              title: const Text('Rooms'),
-              subtitle: Text('${_roomCount ?? '…'} rooms configured'),
-              trailing: const Icon(Icons.chevron_right),
-            ),
-          ),
-          const SizedBox(height: 12),
-          const WhatsAppSettings(),
-          const SizedBox(height: 12),
-          const PinSettings(),
-          const SizedBox(height: 12),
-          const BackupSettings(),
-          const SizedBox(height: 12),
-          Card(
-            color: Theme.of(context).colorScheme.errorContainer.withValues(alpha: 0.3),
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  Text('Danger Zone', style: Theme.of(context).textTheme.titleSmall),
-                  const SizedBox(height: 8),
-                  Text('${_customerCount ?? '…'} customer records and their ID photos.'),
-                  const SizedBox(height: 12),
-                  FilledButton(
-                    onPressed: _clearAllData,
-                    style: FilledButton.styleFrom(
-                      backgroundColor: Theme.of(context).colorScheme.error,
-                      foregroundColor: Theme.of(context).colorScheme.onError,
-                    ),
-                    child: const Text('Clear All Data'),
-                  ),
-                ],
+              _SettingsTile(
+                icon: Icons.meeting_room_outlined,
+                title: 'Rooms',
+                subtitle: '${_roomCount ?? '…'} rooms configured',
+                onTap: () => context.push('/rooms'),
               ),
-            ),
+            ],
           ),
-          const SizedBox(height: 12),
+          _SectionLabel('Guests'),
+          _SettingsGroup(
+            children: [
+              _SettingsTile(
+                icon: Icons.chat_bubble_outline,
+                title: 'WhatsApp welcome',
+                subtitle: hotel.whatsappEnabled
+                    ? 'On · country code +${hotel.whatsappCountryCode}'
+                    : 'Off',
+                onTap: () => context.push('/settings/whatsapp'),
+              ),
+            ],
+          ),
+          _SectionLabel('Security'),
+          _SettingsGroup(
+            children: [
+              _SettingsTile(
+                icon: Icons.lock_outline,
+                title: 'App lock',
+                subtitle: hotel.pinEnabled ? 'PIN required to open the app' : 'No PIN set',
+                onTap: () => context.push('/settings/security'),
+              ),
+            ],
+          ),
+          _SectionLabel('Data'),
+          _SettingsGroup(
+            children: [
+              _SettingsTile(
+                icon: Icons.backup_outlined,
+                title: 'Backup & restore',
+                subtitle: hotel.lastBackupAt.isEmpty
+                    ? 'No backup yet'
+                    : 'Last backup ${formatDateTime(hotel.lastBackupAt)}',
+                onTap: () => context.push('/settings/backup'),
+              ),
+              _SettingsTile(
+                icon: Icons.warning_amber_outlined,
+                title: 'Clear all data',
+                subtitle: 'Delete every customer record on this device',
+                danger: true,
+                onTap: () => context.push('/settings/advanced'),
+              ),
+            ],
+          ),
+          _SectionLabel('About'),
           Card(
+            margin: EdgeInsets.zero,
             child: Padding(
               padding: const EdgeInsets.all(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  Text('About', style: Theme.of(context).textTheme.titleSmall),
-                  const SizedBox(height: 8),
-                  Text('App version: $_appVersion'),
-                  const Text('Storage: On-device SQLite + private file storage'),
-                  Text('Database version: v$latestVersion'),
-                  const Text('Network: Works fully offline — no cloud, no accounts'),
-                ],
+              child: DefaultTextStyle.merge(
+                style: theme.textTheme.bodyMedium!.copyWith(color: theme.colorScheme.onSurfaceVariant),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('App version: $_appVersion'),
+                    Text('Database version: v$latestVersion'),
+                    const Text('Storage: On-device SQLite + private file storage'),
+                    const Text('Network: Works fully offline — no cloud, no accounts'),
+                  ],
+                ),
               ),
             ),
           ),
         ],
       ),
+    );
+  }
+}
+
+class _SectionLabel extends StatelessWidget {
+  final String text;
+  const _SectionLabel(this.text);
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(4, 20, 4, 8),
+      child: Text(
+        text.toUpperCase(),
+        style: theme.textTheme.labelSmall?.copyWith(
+          color: theme.colorScheme.primary,
+          letterSpacing: 0.8,
+          fontWeight: FontWeight.w700,
+        ),
+      ),
+    );
+  }
+}
+
+/// A card holding related tiles, hairline-divided so the group reads as one
+/// block instead of a stack of separate cards.
+class _SettingsGroup extends StatelessWidget {
+  final List<Widget> children;
+  const _SettingsGroup({required this.children});
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      margin: EdgeInsets.zero,
+      clipBehavior: Clip.antiAlias,
+      child: Column(
+        children: [
+          for (var i = 0; i < children.length; i++) ...[
+            if (i > 0) const Divider(height: 1, indent: 56),
+            children[i],
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+class _SettingsTile extends StatelessWidget {
+  final IconData icon;
+  final String title;
+  final String subtitle;
+  final VoidCallback onTap;
+  final bool danger;
+  const _SettingsTile({
+    required this.icon,
+    required this.title,
+    required this.subtitle,
+    required this.onTap,
+    this.danger = false,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final tint = danger ? scheme.error : scheme.onSurfaceVariant;
+    return ListTile(
+      onTap: onTap,
+      leading: Icon(icon, color: tint),
+      title: Text(title, style: danger ? TextStyle(color: scheme.error) : null),
+      subtitle: Text(subtitle, maxLines: 2, overflow: TextOverflow.ellipsis),
+      trailing: const Icon(Icons.chevron_right),
     );
   }
 }

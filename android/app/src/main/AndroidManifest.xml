@@ -9,7 +9,7 @@
         android:maxSdkVersion="32"/>
 
     <application
-        android:label="Hotel Manager"
+        android:label="RoomEase"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher"
         android:allowBackup="false"

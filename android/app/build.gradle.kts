@@ -23,7 +23,10 @@ android {
     }
 
     defaultConfig {
-        applicationId = "com.trinity.hotelmanager"
+        // Deliberately different from the old React app's id so both can be
+        // installed side by side: the original keeps its data untouched as a
+        // fallback until this one is verified on the real device.
+        applicationId = "com.trinity.roomease"
         // Matches the previous (Capacitor) release: Android 8.0+.
         minSdk = 26
         targetSdk = 36

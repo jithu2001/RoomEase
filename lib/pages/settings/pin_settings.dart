@@ -99,7 +99,6 @@ class _PinSettingsState extends State<PinSettings> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Text('App Lock', style: Theme.of(context).textTheme.titleSmall),
             const SizedBox(height: 8),
             if (_mode == _PinMode.idle) ...[
               Text(
