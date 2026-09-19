@@ -2,6 +2,7 @@
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:share_plus/share_plus.dart';
 
 import '../../services/backup_service.dart';
 import '../../state/app_state.dart';
@@ -21,7 +22,10 @@ class BackupSettings extends StatefulWidget {
 
 class _BackupSettingsState extends State<BackupSettings> {
   bool _busy = false;
+  bool _sharing = false;
+  bool _saving = false;
   ExportResult? _lastExport;
+  bool _lastExportHadImages = true;
   RestoreSummary? _lastRestore;
   bool? _autoBackupEnabled;
   String? _lastAutoRun;
@@ -52,11 +56,75 @@ class _BackupSettingsState extends State<BackupSettings> {
     try {
       final result = await appState.services.backup.exportBackup(includeImages: includeImages);
       await appState.reloadHotel();
-      if (mounted) setState(() => _lastExport = result);
+      if (mounted) {
+        setState(() {
+          _lastExport = result;
+          _lastExportHadImages = includeImages;
+        });
+      }
     } catch (e) {
       if (mounted) context.showErrorToast(e);
     } finally {
       if (mounted) setState(() => _busy = false);
+    }
+  }
+
+  /// Hands the most recent export to the Android share sheet, so it can go to
+  /// Drive, OneDrive, email or a chat app without hunting for the file.
+  ///
+  /// Shares the archive that was just written rather than building a new one —
+  /// re-exporting would leave a second copy behind on the device.
+  Future<void> _shareLastExport() async {
+    final export = _lastExport;
+    if (export == null) return;
+    setState(() => _sharing = true);
+    try {
+      final result = await SharePlus.instance.share(
+        ShareParams(
+          // No `text`: some Android targets send the note instead of the file
+          // when both are present.
+          subject: export.fileName,
+          files: [XFile(export.path, mimeType: 'application/zip', name: export.fileName)],
+        ),
+      );
+      if (!mounted) return;
+      if (result.status == ShareResultStatus.unavailable) {
+        context.showErrorToast('No app on this device can share that file.');
+      }
+    } catch (e) {
+      if (mounted) context.showErrorToast(e);
+    } finally {
+      if (mounted) setState(() => _sharing = false);
+    }
+  }
+
+  /// Saves a copy of the backup wherever the user chooses — Downloads,
+  /// Documents, an SD card or a cloud folder — via the system save dialog.
+  ///
+  /// The app's own copy lives under `Android/data/`, which Android 11+ hides
+  /// from the Files app, so this is the only way most people can actually get
+  /// at their backup on the device.
+  Future<void> _saveCopy() async {
+    final export = _lastExport;
+    if (export == null) return;
+    setState(() => _saving = true);
+    final appState = context.read<AppState>();
+    try {
+      // Rebuilt rather than read back from disk: it keeps file access in the
+      // service layer, and the contents are the same archive.
+      final built = await appState.services.backup.buildArchive(includeImages: _lastExportHadImages);
+      final uri = await FilePicker.saveFile(
+        fileName: export.fileName,
+        bytes: built.bytes,
+        mimeType: 'application/zip',
+        dialogTitle: 'Save backup',
+      );
+      if (!mounted) return;
+      if (uri != null) context.showSuccessToast('Backup saved as ${export.fileName}');
+    } catch (e) {
+      if (mounted) context.showErrorToast(e);
+    } finally {
+      if (mounted) setState(() => _saving = false);
     }
   }
 
@@ -159,6 +227,26 @@ class _BackupSettingsState extends State<BackupSettings> {
                 message: '${_lastExport!.fileName}\n${_lastExport!.customers} customers, ${_lastExport!.images} photos\n${_lastExport!.path}',
                 kind: _lastExport!.warnings.isEmpty ? NoticeKind.info : NoticeKind.warn,
               ),
+              const SizedBox(height: 8),
+              FilledButton.icon(
+                onPressed: _saving ? null : _saveCopy,
+                icon: const Icon(Icons.save_alt),
+                label: Text(_saving ? 'Saving…' : 'Save to my files…'),
+              ),
+              const SizedBox(height: 8),
+              OutlinedButton.icon(
+                onPressed: _sharing ? null : _shareLastExport,
+                icon: const Icon(Icons.ios_share),
+                label: Text(_sharing ? 'Opening…' : 'Share this backup'),
+              ),
+              if (_lastExport!.images > 0) ...[
+                const SizedBox(height: 4),
+                Text(
+                  'This archive contains ${_lastExport!.images} guest ID photos. '
+                  'Prefer a data-only export when sending it through a chat app.',
+                  style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 12),
+                ),
+              ],
             ],
             if (_lastRestore != null) ...[
               const SizedBox(height: 12),
@@ -170,7 +258,9 @@ class _BackupSettingsState extends State<BackupSettings> {
             ],
             const SizedBox(height: 8),
             Text(
-              'Backups are written to this app\'s folder. Copy them to your computer or an SD card regularly.',
+              'The app keeps its own copy in a private folder that Android hides from the Files app. '
+              'Use \'Save to my files\' to put a copy somewhere you can find it, such as Downloads, or Share to send it straight to Drive.\n\n'
+              'Cloud apps keep every upload as a separate file, so delete old copies there from time to time.',
               style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 12),
             ),
           ],
